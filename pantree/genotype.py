@@ -47,7 +47,8 @@ class Genotype:
         end = [graph.termini[1] + '_+' if graph.direction(walk[-1]) == 1 else graph.termini[0] + '_-']
         walk = start + walk + end
 
-        num_edges = graph.number_of_edges() // 2 + 1  # +1 for safety
+        # Self-complementary biedges are a single edge, so the edge count alone undercounts edge indices
+        num_edges = max(graph.number_of_edges() // 2, int(graph.number_of_biedges)) + 1
         ref_visited = np.zeros(num_edges, dtype=np.bool_)
         ref_counts_multi = {}  # only for edges visited >= 2 times
         count_alt = {}

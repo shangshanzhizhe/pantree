@@ -41,6 +41,12 @@ def test_single_segment_is_written_forward(tmp_path):
     assert ['CAT'] == [s[2] for s in segments if s[3] == 'oi:J:["1"]']
 
 
+def test_self_complementary_edge_is_a_variant(tmp_path):
+    G = load('self_edges_genotype.gfa', 'REF')
+    assert ('2_+', '2_-') in G.variant_edges
+    G.write_vcf(os.path.join(DATA_DIR, 'self_edges_genotype.gfa'), str(tmp_path / 'out.vcf'), 'chr1')
+
+
 def test_simplify_output_does_not_depend_on_hash_seed(tmp_path):
     outputs = []
     for seed in ('1', '2'):

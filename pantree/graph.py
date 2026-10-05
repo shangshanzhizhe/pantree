@@ -607,8 +607,10 @@ class PangenomeGraph(nx.DiGraph):
         edge_data['is_representative'] = True
         self.add_edge(node1, node2, **edge_data)
 
-        edge_data['is_representative'] = False
-        self.add_edge(node_complement(node2), node_complement(node1), **edge_data)
+        # An edge between the two ends of one segment (e.g. 4_+ -> 4_-) is its own complement
+        if (node_complement(node2), node_complement(node1)) != (node1, node2):
+            edge_data['is_representative'] = False
+            self.add_edge(node_complement(node2), node_complement(node1), **edge_data)
         self.number_of_biedges += 1
 
     def representative_edge(self, edge: tuple):
