@@ -47,6 +47,18 @@ def test_self_complementary_edge_is_a_variant(tmp_path):
     G.write_vcf(os.path.join(DATA_DIR, 'self_edges_genotype.gfa'), str(tmp_path / 'out.vcf'), 'chr1')
 
 
+def test_inversion_records_report_missing_ref_counts(tmp_path):
+    G = load('inverted_reference_revisit.gfa', 'REF')
+    vcf = tmp_path / 'out.vcf'
+    G.write_vcf(os.path.join(DATA_DIR, 'inverted_reference_revisit.gfa'), str(vcf), 'chr1')
+    records = [l.split('\t') for l in vcf.read_text().splitlines() if not l.startswith('#')]
+    inversions = [r for r in records if 'VT=INV' in r[7]]
+    assert inversions
+    for r in inversions:
+        assert 'RC=.;' in r[7] and 'AN=.;' in r[7]
+        assert all(sample.split(':')[1] == '.' for sample in r[9:])
+
+
 def test_simplify_output_does_not_depend_on_hash_seed(tmp_path):
     outputs = []
     for seed in ('1', '2'):

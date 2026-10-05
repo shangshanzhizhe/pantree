@@ -113,6 +113,8 @@ class _VariantData:
         # Compute and store repeat motif
         motif = graph.annotate_repeat_motif(edge, ref_allele_raw, alt_allele_raw, branch_point)
         edge_data['motif'] = motif
+        # Read by the RC/AN fields and genotype records, which report '.' for inversions
+        edge_data['is_inversion'] = graph.is_inversion(edge)
 
         # Compute allele counts from genotype data
         if sample_to_genotype:
