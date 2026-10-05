@@ -181,14 +181,17 @@ class PangenomeGraph(nx.DiGraph):
 
         logger.info("Loading W/P lines (walks)")
         walk_count = 0
+        reference_hap_name = None
+        skipped_reference_walks = []
         for line in read_gfa_line_by_line(gfa_file, line_types=['W', 'P']):
             # Check if haplotype name starts with ref_name (e.g., 'GRCh38#0#chr20' starts with 'GRCh38')
             hit_reference = line.sample_name == ref_name
             if hit_reference:
-                if G.reference_path:
-                    warnings.warn("Reference path already exists. Skipping additional reference walks.")
-                else:
+                if reference_hap_name is None:
                     G.add_reference_path(line.walk)
+                    reference_hap_name = line.hap_name
+                else:
+                    skipped_reference_walks.append(line.hap_name)
 
             # Extract sample#haplotype from hap_name (format: sample#haplotype#contig)
             if line.sample_name in priority_dict:
@@ -209,6 +212,15 @@ class PangenomeGraph(nx.DiGraph):
                 logger.info(f"Processed {walk_count} walks")
 
         logger.info(f"Loaded {len(G.nodes) / 2:.0f} binodes, {len(G.edges) / 2:.0f} biedges")
+
+        if reference_hap_name is None:
+            warnings.warn(f"No walk of reference sample {ref_name!r} was found; variants will not be anchored "
+                          f"to a reference path")
+        elif skipped_reference_walks:
+            shown = ', '.join(skipped_reference_walks[:5]) + (', ...' if len(skipped_reference_walks) > 5 else '')
+            warnings.warn(f"Reference sample {ref_name!r} has {len(skipped_reference_walks) + 1} walks; only the "
+                          f"first ({reference_hap_name}) is used as the reference path, skipping {shown}. If these "
+                          f"are other contigs, split the graph and run pantree once per contig.")
 
         assign_node_directions(G, G.reference_path)
 
@@ -1106,6 +1118,8 @@ class PangenomeGraph(nx.DiGraph):
             ref_allele, alt_allele, _, branch_point = self.ref_alt_alleles(variant_edge)
 
         def get_repeat_motif(allele: str) -> Optional[str]:
+            if not allele:
+                return None
             non_basepair_character = 'N'
             if any(letter == non_basepair_character for letter in allele):
                 return None

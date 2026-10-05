@@ -70,3 +70,21 @@ def test_simplify_output_does_not_depend_on_hash_seed(tmp_path):
                        env={**os.environ, 'PYTHONHASHSEED': seed})
         outputs.append(out.read_text())
     assert outputs[0] == outputs[1]
+
+
+def test_missing_reference_sample_warns():
+    with pytest.warns(UserWarning, match='No walk of reference sample'):
+        PangenomeGraph.from_gfa(os.path.join(DATA_DIR, 'simple_nested.gfa'), ref_name='not_a_sample')
+
+
+def test_extra_reference_walks_are_reported_once():
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter('always')
+        PangenomeGraph.from_gfa(os.path.join(DATA_DIR, 'c4a_with_inversion_and_sequences.gfa'), ref_name='HG00438')
+    messages = [str(w.message) for w in caught if 'is used as the reference path' in str(w.message)]
+    assert len(messages) == 1 and 'has 2 walks' in messages[0]
+
+
+def test_sequence_complement_handles_soft_masking_and_ambiguity_codes():
+    assert sequence_complement('ACGTacgtN') == 'NacgtACGT'
+    assert sequence_complement('RYKMSWBDHV') == 'BDHVWSKMRY'

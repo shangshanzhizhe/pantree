@@ -2,12 +2,11 @@ import gzip
 import pickle
 import functools
 
-def sequence_complement(s: str) -> str:
-    def _base_complement(letter: str) -> str:
-        base_dict: dict = {'A': 'T', 'C': 'G', 'T' : 'A', 'G': 'C'}
-        return base_dict[letter] if letter in base_dict else letter
+# Soft-masked (lowercase) and IUPAC ambiguity codes are complemented too; N, S, W and other letters map to themselves
+_COMPLEMENT = str.maketrans('ACGTRYKMBVDHacgtrykmbvdh', 'TGCAYRMKVBHDtgcayrmkvbhd')
 
-    return ''.join(_base_complement(c) for c in reversed(s))
+def sequence_complement(s: str) -> str:
+    return s.translate(_COMPLEMENT)[::-1]
 
 @functools.lru_cache(maxsize=None)
 def node_complement(s: str):
